@@ -19,7 +19,7 @@ import math
 
 # --- caffe dep ---#
 import sys
-sys.path.append('/home/peter/caffe/python') # pycaffe 
+sys.path.append('/home/peter/caffe/python') # pycaffe path
 sys.path.append('/home/peter/caffe/fcn.berkeleyvision.org') # bvlc fcn module path
 from PIL import Image
 import caffe
@@ -82,8 +82,8 @@ def brand_prediction(rgb_data, depth_data):
 
 	image = Image.fromarray(net.blobs[layer].data[0].argmax(0).astype(np.uint8), mode='P')
 	mask = mask_convertion(image)
-        cv_mask = cv2_to_imgmsg(mask, encoding="passthrough")   #grays scale
-
+	mask_L = mask.convert("L")  
+        cv_mask = cv2_to_imgmsg(mask_L, encoding="passthrough")   #grays scale
     except CvBridgeError as e:
         print(e)
     '''
