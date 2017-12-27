@@ -1,0 +1,16 @@
+roslaunch realsense_camera sr300_nodelet_rgbd.launch
+roslaunch apriltags_ros example.launch
+rosrun tf static_transform_publisher 0 0 0 0 0 0 1 /map /bin_center 100
+rosrun heightmap_creator getpose.py
+rosrun heightmap_creator setcamera.py
+rosrun heightmap_creator get_height_map
+rosservice call /get_height_map true
+
+
+
+
+NOTE:
+catkin_make error No rule to make target `/usr/lib/x86_64-linux-gnu/libconsole_bridge.soopencv_videostab'
+edit catkin_ws/build/heightmap_creator/CMakeFiles/adjustment.dir/build.make & link.txt
+libconsole_bridge.soopencv_videostab -> libconsole_bridge.so
+catkin_make clean & catkin_make
