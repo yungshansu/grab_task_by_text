@@ -6,6 +6,7 @@
 import rospy
 import numpy as np
 import cv2  # OpenCV module
+import time
 
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2, PointField
 from visualization_msgs.msg import Marker
@@ -21,7 +22,7 @@ import math
 import sys
 sys.path.append('/home/peter/caffe/python') # pycaffe path
 sys.path.append('/home/peter/caffe/fcn.berkeleyvision.org') # bvlc fcn module path
-from PIL import Image
+from PIL import Image as Image_PIL
 import caffe
 import os
 # --- caffe dep ---#
@@ -34,8 +35,9 @@ rospy.init_node('sensor_unit_test', anonymous=True)
 
 
 # Publisher for publishing images in rviz
-point_publisher = rospy.Publisher('/camera/text_pose/points', PointCloud2, queue_size=10)
-mask_publisher = rospy.Publisher('/camera/text_pose/mask', Image, queue_size=10)
+point_publisher = rospy.Publisher('/camera/text_pose/points', PointCloud2, queue_size=1)
+mask_publisher = rospy.Publisher('/camera/text_pose/mask', Image, queue_size=1)
+rgb_image_publisher = rospy.Publisher('/camera/rgb_image', Image, queue_size=1)
 # Bridge to convert ROS Image type to OpenCV Image type
 cv_bridge = CvBridge()  
 
@@ -49,7 +51,10 @@ msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo, timeout=No
 
 
 # load net
+
+
 net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/train_iter_320000/train_iter_320000.caffemodel', caffe.TEST)
+caffe.set_mode_gpu()
 
 
 def main():
@@ -63,8 +68,11 @@ def main():
 
 
 def brand_prediction(rgb_data, depth_data):
-
+	
     try:
+ 	print 'start predict'
+	caffe.set_mode_gpu()
+	tstart = time.time()
         cv_image = cv_bridge.imgmsg_to_cv2(rgb_data, "bgr8")
 	
 	# load image, switch to BGR, subtract mean, and make dims C x H x W for Caffe
@@ -79,11 +87,14 @@ def brand_prediction(rgb_data, depth_data):
 	# run net and take argmax for prediction
 	net.forward()
 	out = net.blobs['score'].data[0].argmax(axis=0)
-
-	image = Image.fromarray(net.blobs['score'].data[0].argmax(0).astype(np.uint8), mode='P')
+	predictend = time.time()
+	print predictend-tstart
+	image = Image_PIL.fromarray(net.blobs['score'].data[0].argmax(0).astype(np.uint8), mode='P')
 	mask = mask_convertion(image)
-	mask_L = mask.convert("L")  
-        cv_mask = cv2_to_imgmsg(mask_L, encoding="passthrough")   #grays scale
+	mask_L = mask.convert("L")
+        pix = np.array(mask_L)
+        cv_mask = cv_bridge.cv2_to_imgmsg(pix, encoding="passthrough")   #grays scale
+	rgb_image_publisher.publish(rgb_data)
     except CvBridgeError as e:
         print(e)
     '''
@@ -94,24 +105,31 @@ def brand_prediction(rgb_data, depth_data):
 
     point_publisher.publish(depth_data)
     mask_publisher.publish(cv_mask)
-
-
+    print 'end predict'
+    tend = time.time()
+    print tend-tstart
 def mask_convertion(unconverted_result):
-    color, count = unconverted_result.colors()
-    decreasing_count = count[np.argsort(-count)]
-    decreasing_color = color[np.argsort(-count)]
+    #color, count = unconverted_result.histogram()
+    list = unconverted_result.histogram()
+    #print len(list)
+
+
+    sec_max = list.index(max (list[1:255]))
+    print sec_max
 
     # index 0 must be background, use index 1
+
     mask = unconverted_result
-    for height in range(0,481):
-        for width in range(0,641):
-		cls = rgb.getpixel((width,height))
-		if cls == decreasing_color[1]:
+    #print mask.size
+    for height in range(0,480):
+        for width in range(0,640):
+		cls = unconverted_result.getpixel((width,height))
+		if cls == sec_max:
 			mask.putpixel((width,height),255)
 	 	else:
 			mask.putpixel((width,height),0)
     return mask
-    
+
     
 
 
