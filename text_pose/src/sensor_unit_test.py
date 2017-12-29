@@ -49,7 +49,7 @@ msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo, timeout=No
 
 
 # load net
-net = caffe.Net('voc-fcn8s/deploy.prototxt', 'voc-fcn8s/fcn8s-heavy-pascal.caffemodel', caffe.TEST)
+net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/train_iter_320000/train_iter_320000.caffemodel', caffe.TEST)
 
 
 def main():
@@ -80,7 +80,7 @@ def brand_prediction(rgb_data, depth_data):
 	net.forward()
 	out = net.blobs['score'].data[0].argmax(axis=0)
 
-	image = Image.fromarray(net.blobs[layer].data[0].argmax(0).astype(np.uint8), mode='P')
+	image = Image.fromarray(net.blobs['score'].data[0].argmax(0).astype(np.uint8), mode='P')
 	mask = mask_convertion(image)
 	mask_L = mask.convert("L")  
         cv_mask = cv2_to_imgmsg(mask_L, encoding="passthrough")   #grays scale
@@ -108,9 +108,9 @@ def mask_convertion(unconverted_result):
 		cls = rgb.getpixel((width,height))
 		if cls == decreasing_color[1]:
 			mask.putpixel((width,height),255)
-	`	else:
+	 	else:
 			mask.putpixel((width,height),0)
-   return mask
+    return mask
     
     
 
