@@ -38,6 +38,7 @@ rospy.init_node('sensor_unit_test', anonymous=True)
 point_publisher = rospy.Publisher('/camera/text_pose/points', PointCloud2, queue_size=1)
 mask_publisher = rospy.Publisher('/camera/text_pose/mask', Image, queue_size=1)
 rgb_image_publisher = rospy.Publisher('/camera/rgb_image', Image, queue_size=1)
+vis_publisher =  rospy.Publisher('/camera/text_pose/vis', Image, queue_size=1)
 # Bridge to convert ROS Image type to OpenCV Image type
 cv_bridge = CvBridge()  
 
@@ -53,7 +54,7 @@ msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo, timeout=No
 # load net
 
 
-net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/train_iter_320000/train_iter_320000.caffemodel', caffe.TEST)
+net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/train_iter_320000/train_iter_296000.caffemodel', caffe.TEST)
 caffe.set_mode_gpu()
 
 
@@ -95,6 +96,7 @@ def brand_prediction(rgb_data, depth_data):
         pix = np.array(mask_L)
         cv_mask = cv_bridge.cv2_to_imgmsg(pix, encoding="passthrough")   #grays scale
 	rgb_image_publisher.publish(rgb_data)
+	point_publisher.publish(depth_data)
     except CvBridgeError as e:
         print(e)
     '''
@@ -111,26 +113,38 @@ def brand_prediction(rgb_data, depth_data):
 def mask_convertion(unconverted_result):
     #color, count = unconverted_result.histogram()
     list = unconverted_result.histogram()
+    
     #print len(list)
 
 
     sec_max = list.index(max (list[1:255]))
-    print sec_max
+    brand_name = ['Background','Barcode','Kleenex_tissue_box','Kleenex_paper_towels','Folgers_classic_roast_coffee','Dove_beauty_bar', 'Crayola_24_ct']
+
+	
+    print brand_name[sec_max]
 
     # index 0 must be background, use index 1
-
+    hsv_colormap = 255* np.array([[0, 0, 0], [1, 0.8571, 0], [0.2857, 1, 0], [0, 1, 0.5714], [0, 0.5714, 1], [0.2857, 0, 1], [1, 0, 0.8571]]) #cls for vis
+    hsv_colormap_int = np.rint(hsv_colormap)
+    color_map = hsv_colormap_int.astype(dtype=int)
     mask = unconverted_result
+    vis = Image_PIL.new(mode = 'RGB', size= (640,480), color=0)
     #print mask.size
     for height in range(0,480):
         for width in range(0,640):
 		cls = unconverted_result.getpixel((width,height))
+		vis.putpixel((width,height),(color_map[cls][0], color_map[cls][1], color_map[cls][2]))
 		if cls == sec_max:
 			mask.putpixel((width,height),255)
 	 	else:
 			mask.putpixel((width,height),0)
+    vis_np = np.array(vis)
+    cv2.cvtColor(vis_np, cv2.COLOR_RGB2BGR);
+    vis_bridge = cv_bridge.cv2_to_imgmsg(vis_np, encoding="rgb8")
+    vis_publisher.publish(vis_bridge)
     return mask
 
-    
+   
 
 
 
