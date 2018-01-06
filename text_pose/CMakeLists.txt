@@ -11,7 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   roscpp
   rospy
+  geometry_msgs
   sensor_msgs
+  visualization_msgs
   std_msgs
   pcl_conversions
   pcl_ros
@@ -204,3 +206,9 @@ include_directories(
 add_executable(sensor_unit src/sensor_unit_test.cpp)
 target_link_libraries(sensor_unit ${catkin_LIBRARIES})
 
+
+add_executable(object_pose_estimation src/object_pose_estimation.cpp)
+target_link_libraries(object_pose_estimation ${catkin_LIBRARIES})
+
+add_executable(pcl_test src/pcl_test.cpp)
+target_link_libraries(pcl_test ${catkin_LIBRARIES})
