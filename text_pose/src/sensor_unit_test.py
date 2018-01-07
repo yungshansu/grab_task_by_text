@@ -54,7 +54,7 @@ msg = rospy.wait_for_message('/camera/depth/camera_info', CameraInfo, timeout=No
 # load net
 
 
-net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/train_iter_320000/train_iter_296000.caffemodel', caffe.TEST)
+net = caffe.Net('/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/deploy.prototxt', '/home/peter/caffe/fcn.berkeleyvision.org/voc-fcn8s/snapshot/iter_320000/train_iter_296000.caffemodel', caffe.TEST)
 caffe.set_mode_gpu()
 
 
