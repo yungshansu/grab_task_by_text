@@ -199,26 +199,31 @@ int  test1 (const sensor_msgs::PointCloud2ConstPtr& point)
 		
 
 		visualization_msgs::Marker marker;
+		//visualization_msgs::Marker line_strip;
    		marker.header.frame_id = "camera_rgb_optical_frame";
    		marker.header.stamp = ros::Time();
    		marker.ns = "my_namespace";
-   		marker.id = 0;
-   		marker.type = visualization_msgs::Marker::SPHERE;
+   		marker.id = 1;
+   		marker.type = visualization_msgs::Marker::LINE_STRIP;
    		marker.action = visualization_msgs::Marker::ADD;
-   		marker.pose.position.x = original_point->points[point_index].x+0.1*cloud_normals->points[point_index].normal[0];
-   		marker.pose.position.y = original_point->points[point_index].y+0.1*cloud_normals->points[point_index].normal[1];
-  		marker.pose.position.z = original_point->points[point_index].z+0.1*cloud_normals->points[point_index].normal[2];
+   		geometry_msgs::Point p;
+  		p.x = original_point->points[point_index].x;
+ 		p.y = original_point->points[point_index].y;
+ 	    p.z = original_point->points[point_index].z;
+ 	    marker.points.push_back(p);
+ 	    p.x = original_point->points[point_index].x+cloud_normals->points[point_index].normal[0]*0.1;
+ 		p.y = original_point->points[point_index].y+cloud_normals->points[point_index].normal[1]*0.1;
+ 	    p.z = original_point->points[point_index].z+cloud_normals->points[point_index].normal[2]*0.1;
+ 	    marker.points.push_back(p);
+
   		marker.pose.orientation.x = 0;
   		marker.pose.orientation.y = 0;
   		marker.pose.orientation.z = 0;
-  		marker.pose.orientation.w = 1;
-  		marker.scale.x = 0.01;
-  		marker.scale.y = 0.01;
-  		marker.scale.z = 0.01;
+  		marker.pose.orientation.w = 1.0;
+  		marker.scale.x = 0.003;
+
   		marker.color.a = 1.0;
-  		marker.color.r = 1.0;
-  		marker.color.g = 0.0;
-  		marker.color.b = 0.0;
+  		marker.color.b = 1.0;
 		
 
 		tf::Transform transform;
